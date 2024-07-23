@@ -13,7 +13,7 @@ public class FindFakeGoldBar {
 
     public static void main(String[] args) {
         // Update the path to the location where chromedriver is placed
-        System.setProperty("webdriver.chrome.driver", "/Users/midhunpavuluru/Documents/Github/Fetch/chromedriver");
+        System.setProperty("webdriver.chrome.driver", "/Users/midhunpavuluru/Documents/Github/FetchCodingChallenge/chromedriver");
         WebDriver driver = new ChromeDriver();
 
         FindFakeGoldBar findFakeGoldBar = new FindFakeGoldBar();
@@ -28,9 +28,10 @@ public class FindFakeGoldBar {
 
             // Click on the fake gold bar number
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            WebElement fakeBarElement = wait.until(ExpectedConditions.elementToBeClickable(By.id("fake_" + fakeBar)));
+            WebElement fakeBarElement = wait.until(ExpectedConditions.elementToBeClickable(By.id("coin_" + fakeBar)));
 
             System.out.println("Fake gold bar element found: " + fakeBarElement);
+            fakeBarElement.click();
 
             // Get the alert message
             Alert alert = wait.until(ExpectedConditions.alertIsPresent());
@@ -39,7 +40,7 @@ public class FindFakeGoldBar {
             alert.accept();
 
             // Output the number of weighings and list of weighings
-            List<WebElement> weighings = driver.findElements(By.className("weighing"));
+            List<WebElement> weighings = driver.findElements(By.xpath("//div[text() = 'Weighings']/following-sibling::ol/li"));
             System.out.println("Number of weighings: " + weighings.size());
             System.out.println("List of weighings:");
             for (WebElement weighing : weighings) {
@@ -54,27 +55,27 @@ public class FindFakeGoldBar {
     }
 
     private int findFakeGoldBar(WebDriver driver, int[] goldBars) {
-        // Implement the algorithm to find the fake gold bar
-        // Here is an example using a binary search-like approach
-
         int left = 0;
         int right = goldBars.length - 1;
 
         while (left < right) {
             int mid = (left + right) / 2;
-            int[] leftGroup = new int[mid - left + 1];
-            int[] rightGroup = new int[right - mid];
+            int size = (right - left + 1) / 3;
+            int[] leftGroup = new int[size];
+            int[] rightGroup = new int[size];
 
-            System.arraycopy(goldBars, left, leftGroup, 0, leftGroup.length);
-            System.arraycopy(goldBars, mid + 1, rightGroup, 0, rightGroup.length);
+            System.arraycopy(goldBars, left, leftGroup, 0, size);
+            System.arraycopy(goldBars, left + size, rightGroup, 0, size);
 
             int result = weigh(driver, leftGroup, rightGroup);
+
             if (result == 0) {
-                return goldBars[mid];
+                left += 2 * size;
             } else if (result == -1) {
-                right = mid;
+                right = left + size - 1;
             } else {
-                left = mid + 1;
+                left += size;
+                right = left + size - 1;
             }
         }
 
@@ -111,7 +112,7 @@ public class FindFakeGoldBar {
         weighButton.click();
 
         // Get the result
-        WebElement resultElement = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[normalize-space(text())='Weighings']/following-sibling::ol/li")));
+        WebElement resultElement = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[normalize-space(text())='Weighings']/following-sibling::ol/li[last()]")));
         String resultText = resultElement.getText();
 
         if (resultText.contains("left")) {
